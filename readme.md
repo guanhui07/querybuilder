@@ -10,18 +10,42 @@ Goal 的查询构造器实现了类似 PDO 参数绑定的形式，来保护您�
 package querybuilder
 import (
 	"fmt"
+	builder "github.com/goal-web/querybuilder"
+	"github.com/gookit/goutil/dump"
 )
 
 func TestSimpleQueryBuilder() {
-    query := NewQuery("users").
+	query := builder.New[string]("users").
 		Where("name", "qbhy").
-        Where("age", ">", 18).
-        Where("gender", "!=", 0).
-        OrWhere("amount", ">=", 100).
-        WhereIsNull("avatar")
-	
-    fmt.Println(query.ToSql())
-    fmt.Println(query.GetBindings())
+		Where("age", ">", 18).
+		Where("gender", "!=", 0).
+		OrWhere("amount", ">=", 100).
+		OrderByDesc("age").
+		OrderBy("id").
+		Limit(10).
+		WhereIsNull("avatar")
+
+	fmt.Println(query.ToSql())
+	fmt.Println(query.GetBindings())
+
+	query = builder.New[string]("users").
+		Where("name", "qbhy").
+		Where("age", ">", 18).
+		Where("gender", "!=", 0).
+		OrWhere("amount", ">=", 100).
+		GroupBy("name").
+		OrderByDesc("age").
+		OrderBy("id").
+		Limit(10).
+		WhereIsNull("avatar")
+
+	fmt.Println(query.ToSql())
+
+	fmt.Println(query.GetBindings())
+	// select * from users where name = ? and age > ? and gender != ? and avatar is null or amount >= ?
+	// [qbhy 18 0 100]
+
+	dump.P(query.ToSql())
     // select * from users where name = ? and age > ? and gender != ? and avatar is null or amount >= ?
     // [qbhy 18 0 100]
 }
@@ -37,11 +61,13 @@ package querybuilder
 import (
 	"fmt"
 	"github.com/goal-web/contracts"
+	builder "github.com/goal-web/querybuilder"
+	"github.com/gookit/goutil/dump"
 )
 
 // TestInsertSql 批量插入数据
 func TestInsertSql() {
-	sql, bindings := NewQuery("users").InsertSql([]contracts.Fields{
+	sql, bindings := builder.New[string]("users").InsertSql([]contracts.Fields{
 		{"name": "qbhy", "age": 18, "money": 100000000000},
 		{"name": "goal", "age": 18, "money": 10},
 	})
@@ -52,11 +78,14 @@ func TestInsertSql() {
 }
 // TestCreateSql 插入单个数据
 func TestCreateSql() {
-	sql, bindings := NewQuery("users").CreateSql(contracts.Fields{
+	sql, bindings := builder.New[string]("users").CreateSql(contracts.Fields{
 		"name": "qbhy", "age": 18, "money": 100000000000,
 	})
+
 	fmt.Println(sql)
-	fmt.Println(bindings) 
+	fmt.Println(bindings)
+
+	dump.P(sql)
 	// insert into users (name,age,money) values (?,?,?) 
 	//[qbhy 18 100000000000]
 }
@@ -70,12 +99,16 @@ package querybuilder
 import (
 	"fmt"
 	"github.com/goal-web/contracts"
+	builder "github.com/goal-web/querybuilder"
+	"github.com/gookit/goutil/dump"
 )
 
 func TestUpdateSql() {
-	sql, bindings := NewQuery("users").Where("id", ">", 1).UpdateSql(contracts.Fields{
-		"name": "qbhy", "age": 18, "money": 100000000000,
-	})
+	sql, bindings := builder.New[string]("users").
+		Where("id", ">", 1).
+		UpdateSql(contracts.Fields{
+			"name": "qbhy", "age": 18, "money": 100000000000,
+		})
 	fmt.Println(sql)
 	fmt.Println(bindings)
     // update users set money = ?,name = ?,age = ? where id > ?
@@ -90,10 +123,12 @@ package querybuilder
 
 import (
 	"fmt"
+	builder "github.com/goal-web/querybuilder"
+	"github.com/gookit/goutil/dump"
 )
 
 func TestDeleteSql() {
-	sql, bindings := NewQuery("users").Where("id", ">", 1).DeleteSql()
+	sql, bindings := builder.New[string]("users").Where("id", ">", 1).DeleteSql()
 	fmt.Println(sql)
 	fmt.Println(bindings)
     // delete from users where id > ?
